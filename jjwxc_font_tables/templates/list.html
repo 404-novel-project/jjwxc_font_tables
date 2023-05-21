@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}晋江文学城自定义字体对照表{% endblock %}
+
+{% block head %}
+<style>
+.section {
+    margin-top: 1.5em;
+    display: grid;
+    grid-template-columns: 30% 30% 30%;
+}
+</style>
+{% endblock %}
+
+
+{% block main %}
+<h1>晋江文学城自定义字体对照表</h1>
+<div class="section">
+    {%- for font_name in font_name_list -%}
+    <div>
+        <a href="{{ url_for('html.get_font', font_name=font_name) }}">{{ font_name }}</a>
+    </div>
+    {%- endfor -%}
+</div>
+{% endblock %}

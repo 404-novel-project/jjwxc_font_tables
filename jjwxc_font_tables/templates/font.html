@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ font.name }}{% endblock %}
+
+{% block head %}
+<style>
+.jjfont {
+  font-family: {{ font.name }}, 'Microsoft YaHei', PingFangSC-Regular, HelveticaNeue-Light, 'Helvetica Neue Light', sans-serif !important;;
+}
+@font-face {
+  font-family: {{ font.name }};
+  src: url('https://static.jjwxc.net/tmp/fonts/{{ font.name }}.woff2?h=my.jjwxc.net') format('woff2');
+}
+</style>
+{% endblock %}
+
+
+{% block main %}
+<h1>{{ font.name }}</h1>
+<div>
+    <table>
+        <thead>
+        <tr>
+            <th>晋江字符（编码）</th>
+            <th>晋江字符（渲染）</th>
+            <th>通用字符</th>
+        </tr>
+        </thead>
+        <tbody>
+        {%- for item in font.table.items() -%}
+        <tr>
+            <td>{{ get_charater_hex(item[0]) }}</td>
+            <td class="jjfont">{{ item[0] }}</td>
+            <td>{{ item[1] }}</td>
+        </tr>
+        {%- endfor -%}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

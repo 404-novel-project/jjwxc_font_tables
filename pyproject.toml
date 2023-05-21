@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "jjwxc_font_tables"
+version = "0.1.0"
+description = "晋江文学城自定义字体解析"
+authors = ["bgme <i@bgme.me>"]
+license = "AGPL3"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+flask = { extras = ["async"], version = "^2.3.2" }
+gunicorn = "^20.1.0"
+httpx = { extras = ["http2"], version = "^0.24.1" }
+flask-sqlalchemy = "^3.0.3"
+pillow = "^9.5.0"
+numpy = "^1.24.3"
+fonttools = "^4.39.4"
+bloom-filter = "^1.3.3"
+brotli = "^1.0.9"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.1"
+pytest-asyncio = "^0.21.0"
+coverage = "^7.2.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["jjwxc_font_tables"]
