@@ -1,0 +1,15 @@
+version: "3"
+services:
+  jjwxc_font_tables:
+    image: jjwxc_font_tables
+    restart: always
+    build:
+      context: .
+    ports:
+      - 8080:8080
+    volumes:
+      - jjwxc_font_tables-data:/app/instance
+
+
+volumes:
+  jjwxc_font_tables-data:

@@ -39,7 +39,7 @@ async def _match(font_name: str) -> Union[tuple[None, int], tuple[dict, int]]:
     elif status == "404":
         return None, 404
     else:
-        return None, 500
+        return None, 502
 
 
 async def match(font_name: str) -> Union[tuple[None, int], tuple[Font, int]]:

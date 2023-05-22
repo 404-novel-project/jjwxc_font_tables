@@ -5,7 +5,7 @@ from typing import Optional
 
 import click
 import sqlalchemy as sa
-from flask import Flask
+from flask import Flask, current_app
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.types import TypeDecorator
 
@@ -51,6 +51,7 @@ def init_db():
     """remove exist database and init new database"""
     db.drop_all()
     db.create_all()
+    current_app.logger.info('init db')
 
 
 @click.command('init-db')
