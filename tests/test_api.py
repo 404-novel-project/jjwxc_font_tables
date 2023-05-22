@@ -25,6 +25,14 @@ def test_get_font_404(app, client, font_name: str):
 
 
 @pytest.mark.parametrize(('font_name'), (
+        'jjwxcfont_0exc0',
+))
+def test_get_font_501(app, client, font_name: str):
+    response = client.get('/api/{}'.format(font_name))
+    assert response.status_code == 501
+
+
+@pytest.mark.parametrize(('font_name'), (
         'jjwxcfont_3o8ddeo', 'jjwxcfont_3o8ddedsafo',
         'jjwxcfont_2o\\8eo', 'jjwxlcfont_2o8eo'
 ))

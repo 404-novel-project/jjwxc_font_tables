@@ -35,11 +35,11 @@ async def _match(font_name: str) -> Union[tuple[None, int], tuple[dict, int]]:
         except exception.MatchError:
             # 运行慢速算法
             # TODO
-            return None, 555
+            return None, 501
     elif status == "404":
         return None, 404
     else:
-        return None, 502
+        return None, 503
 
 
 async def match(font_name: str) -> Union[tuple[None, int], tuple[Font, int]]:

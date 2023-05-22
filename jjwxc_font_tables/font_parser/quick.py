@@ -1,7 +1,7 @@
 import json
-import os
 from copy import deepcopy
 
+from flask import current_app
 from fontTools.ttLib import ttFont
 
 from .exception import MatchError
@@ -40,11 +40,14 @@ def get_font_CoorTable(ttf: ttFont.TTFont):
     return font_coordTable
 
 
-def get_jjwxc_std_font_coordTable() -> dict[str, list[tuple[int, int]]]:
+def get_jjwxc_std_font_coordTable() -> list[
+    tuple[
+        str,
+        list[tuple[int, int]]
+    ]
+]:
     """载入晋江文学城字体标准coordTable"""
-    pwd = os.path.dirname(os.path.realpath(__file__))
-    coordTable_path = os.path.join(pwd, 'assets/coorTable.json')
-    with open(coordTable_path, 'r') as f:
+    with open(current_app.config.get('COORD_TABLE_PATH'), 'r') as f:
         return json.load(f)
 
 
@@ -75,7 +78,7 @@ def match_font(ttf: ttFont.TTFont):
     out = {}
 
     FUZZ = 20
-    for jj_std_item in jjwxc_std_coordTable.items():
+    for jj_std_item in jjwxc_std_coordTable:
         for ttf_item in _ttf_coordTable.items():
             if is_glpyh_similar(jj_std_item[1], ttf_item[1], FUZZ):
                 out[ttf_item[0]] = jj_std_item[0]
