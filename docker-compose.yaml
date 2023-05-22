@@ -6,7 +6,7 @@ services:
     build:
       context: .
     ports:
-      - 8080:8080
+      - "8080:8080"
     volumes:
       - jjwxc_font_tables-data:/app/instance
 

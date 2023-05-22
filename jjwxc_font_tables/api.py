@@ -6,7 +6,7 @@ from .lib import add_etag
 bp = Blueprint('api', __name__, url_prefix='/api')
 
 
-def add_CORS_and_cache_headers(response: Response):
+def add_cors_and_cache_headers(response: Response):
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS')
     response.headers.add('Access-Control-Expose-Headers',
@@ -18,7 +18,7 @@ def add_CORS_and_cache_headers(response: Response):
 
 @bp.after_request
 def api_after_request(response: Response):
-    add_CORS_and_cache_headers(response)
+    add_cors_and_cache_headers(response)
     return response
 
 
@@ -26,7 +26,7 @@ def api_after_request(response: Response):
 async def get_font(font_name: str):
     font, status_code = await match(font_name)
     if status_code == 200:
-        _font = font.toDict()
+        _font = font.to_dict()
         _font.pop('bytes', None)
         response = jsonify(_font)
         add_etag(response)

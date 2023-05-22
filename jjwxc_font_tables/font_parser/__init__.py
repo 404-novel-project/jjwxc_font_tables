@@ -20,14 +20,18 @@ def validator(input_font_name: str) -> bool:
     return False
 
 
-async def _match(font_name: str) -> Union[tuple[None, int], tuple[dict, int]]:
+async def _match(font_name: str) -> \
+        Union[
+            tuple[None, int],
+            tuple[dict[str, Union[str, bytes, dict[str, str]]], int]
+        ]:
     font = await download.get_font(font_name)
     status = font.get('status')
     if status == 'OK':
         try:
             table = quick.match_font(font.get('ttf'))
 
-            out = deepcopy(font)
+            out: dict[str, Union[str, bytes, dict[str, str]]] = deepcopy(font)
             out.pop('ttf', None)
             out['table'] = table
 
@@ -42,7 +46,11 @@ async def _match(font_name: str) -> Union[tuple[None, int], tuple[dict, int]]:
         return None, 503
 
 
-async def match(font_name: str) -> Union[tuple[None, int], tuple[Font, int]]:
+async def match(font_name: str) -> \
+        Union[
+            tuple[None, int],
+            tuple[dict[str, Union[str, bytes, dict[str, str]]], int]
+        ]:
     if not validator(font_name):
         return None, 403
     try:
@@ -60,6 +68,6 @@ async def match(font_name: str) -> Union[tuple[None, int], tuple[Font, int]]:
             )
             db.session.add(font)
             db.session.commit()
-            return (await match(font_name))
+            return await match(font_name)
         else:
             return None, status_code

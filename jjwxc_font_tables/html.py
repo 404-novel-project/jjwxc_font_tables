@@ -11,7 +11,7 @@ bp = Blueprint('html', __name__, url_prefix='/html')
 @bp.route('/')
 def get_list():
     font_name_list = db.session.execute(
-        sa.select(Font.name)
+        sa.select(Font.name).order_by(Font.name.desc())
     ).fetchall()
     _font_name_list = sorted(list(map(
         lambda x: x[0], font_name_list
@@ -28,7 +28,7 @@ async def get_font(font_name: str):
     font, status_code = await match(font_name)
 
     if status_code == 200:
-        output = render_template('font.html', font=font.toDict(), get_charater_hex=get_charater_hex)
+        output = render_template('font.html', font=font.to_dict(), get_charater_hex=get_charater_hex)
         response = make_response(output)
 
         response.headers.add('Cache-Control', 'max-age=2678400')

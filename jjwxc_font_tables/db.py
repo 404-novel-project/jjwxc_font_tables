@@ -37,7 +37,7 @@ class Font(db.Model):
     table = sa.Column(JSONEncodedSortedOrderedDict(), nullable=False)
     created = sa.Column(sa.DateTime, nullable=False, default=datetime.now())
 
-    def toDict(self):
+    def to_dict(self):
         _font = {
             "name": self.name,
             "bytes": self.bytes,

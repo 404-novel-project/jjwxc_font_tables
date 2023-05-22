@@ -14,7 +14,7 @@ async def get_font(font_name: str):
     return r
 
 
-@pytest.mark.parametrize(('font_name'), (
+@pytest.mark.parametrize('font_name', (
         'jjwxcfont_2o8eo', 'jjwxcfont_2odzt',
 ))
 async def test_get_font_ok(font_name: str):
@@ -22,7 +22,7 @@ async def test_get_font_ok(font_name: str):
     assert r['status'] == 'OK'
 
 
-@pytest.mark.parametrize(('font_name'), (
+@pytest.mark.parametrize('font_name', (
         'jjwxcfont_3o8eo',
 ))
 async def test_get_font_404(font_name: str):
@@ -30,7 +30,7 @@ async def test_get_font_404(font_name: str):
     assert r['status'] == '404'
 
 
-@pytest.mark.parametrize(('font_name'), (
+@pytest.mark.parametrize('font_name', (
         'jjwxcfont_2o8eo', 'jjwxcfont_2odzt',
 ))
 async def test_quick_match(font_name: str):

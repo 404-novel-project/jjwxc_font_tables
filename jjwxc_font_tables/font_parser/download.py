@@ -37,7 +37,7 @@ async def request_font(font_name: str, retry: int = 5) \
 
             retry = retry - 1
 
-        except (httpx.TransportError, h2.exceptions.ProtocolError) as error:
+        except (httpx.TransportError, h2.exceptions.ProtocolError):
             await asyncio.sleep(5)
             retry = retry - 1
 
@@ -56,17 +56,17 @@ def woff2_to_ttf(input_bytest: bytes):
 
 
 async def get_font(font_name: str) -> dict[str, Union[str, bytes, ttFont.TTFont]]:
-    bytes, status = await request_font(font_name)
+    font_bytes, status = await request_font(font_name)
 
     if status == 'OK':
         m = hashlib.sha1()
-        m.update(bytes)
+        m.update(font_bytes)
         hashsum = m.hexdigest()
 
         return {
             "name": font_name,
-            "bytes": bytes,
-            "ttf": woff2_to_ttf(bytes),
+            "bytes": font_bytes,
+            "ttf": woff2_to_ttf(font_bytes),
             "hashsum": hashsum,
             "status": status
         }
