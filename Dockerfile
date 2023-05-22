@@ -6,7 +6,7 @@ COPY entrypoint.sh pyproject.toml poetry.lock /app/
 
 RUN pypy3 -m pip install poetry \
     && poetry config virtualenvs.create false \
-    && poetry install --no-cache --without=test --no-interaction --no-ansi \
+    && poetry install --without=test --no-interaction --no-ansi \
     && mkdir instance jjwxc_font_tables \
     && chmod +x /app/entrypoint.sh
 
