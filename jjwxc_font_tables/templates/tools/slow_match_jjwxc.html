@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}慢速匹配晋江文学城字体{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+
+{% block main %}
+<h1>慢速匹配晋江文学城字体</h1>
+<div class="form">
+    <form method="post">
+        <fieldset>
+            <label for="jjwxc_font_name">晋江字体名称：</label>
+            <input name="jjwxc_font_name" id="jjwxc_font_name" required>
+        </fieldset>
+
+        <fieldset>
+            <label for="std_font">标准字体：</label>
+            <select name="std_font" id="std_font">
+                <option value="SourceHanSansSC-Normal">SourceHanSansSC Normal</option>
+                <option value="SourceHanSansSC-Regular">SourceHanSansSC Regular</option>
+            </select>
+        </fieldset>
+
+        <fieldset>
+            <label for="guest_range">对比字符集：</label>
+            <select name="guest_range" id="guest_range">
+                <option value="jjwxc">晋江文学城字符集</option>
+                <option value="2500">现代汉语常用字表</option>
+            </select>
+        </fieldset>
+
+        <input type="submit" value="提交">
+    </form>
+</div>
+{% endblock %}

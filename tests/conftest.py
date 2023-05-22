@@ -14,6 +14,7 @@ def app():
     app = create_app({
         'SQLALCHEMY_DATABASE_URI': 'sqlite:///{}'.format(db_path),
         'TESTING': True,
+        'ENABLE_TOOLS': True
     })
 
     with app.app_context():

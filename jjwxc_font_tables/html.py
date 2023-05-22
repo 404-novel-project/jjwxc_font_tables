@@ -2,8 +2,8 @@ import sqlalchemy as sa
 from flask import Blueprint, render_template, make_response, abort
 
 from .db import db, Font
-from .font_parser import match
-from .lib import add_etag
+from .font_parser import match_jjwxc_font
+from .lib import add_etag, get_charater_hex
 
 bp = Blueprint('html', __name__, url_prefix='/html')
 
@@ -22,10 +22,7 @@ def get_list():
 
 @bp.route('/<font_name>')
 async def get_font(font_name: str):
-    def get_charater_hex(chac: str):
-        return str(hex(ord(chac))).replace('0x', 'U+')
-
-    font, status_code = await match(font_name)
+    font, status_code = await match_jjwxc_font(font_name)
 
     if status_code == 200:
         output = render_template('font.html', font=font.to_dict(), get_charater_hex=get_charater_hex)

@@ -48,7 +48,6 @@ class Font(db.Model):
 
 
 def init_db():
-    """remove exist database and init new database"""
     db.drop_all()
     db.create_all()
     current_app.logger.info('init db')
@@ -56,6 +55,7 @@ def init_db():
 
 @click.command('init-db')
 def init_db_command():
+    """清空当前数据并重新初始化数据库"""
     init_db()
     print('Initialized the database.')
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, Response, jsonify, abort
 
-from .font_parser import match
+from .font_parser import match_jjwxc_font
 from .lib import add_etag
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -24,7 +24,7 @@ def api_after_request(response: Response):
 
 @bp.route('/<font_name>')
 async def get_font(font_name: str):
-    font, status_code = await match(font_name)
+    font, status_code = await match_jjwxc_font(font_name)
     if status_code == 200:
         _font = font.to_dict()
         _font.pop('bytes', None)
@@ -37,7 +37,7 @@ async def get_font(font_name: str):
 
 @bp.route('/<font_name>/table')
 async def get_table(font_name: str):
-    font, status_code = await match(font_name)
+    font, status_code = await match_jjwxc_font(font_name)
     if status_code == 200:
         response = jsonify(font.table)
         add_etag(response)
@@ -48,7 +48,7 @@ async def get_table(font_name: str):
 
 @bp.route('/<font_name>/bytes')
 async def get_bytes(font_name: str):
-    font, status_code = await match(font_name)
+    font, status_code = await match_jjwxc_font(font_name)
     if status_code == 200:
         response = Response(font.bytes, mimetype='application/font-woff2')
         response.headers.add('Content-Disposition',

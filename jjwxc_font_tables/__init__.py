@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 import shutil
@@ -16,7 +15,9 @@ def create_app(test_config=None):
         COORD_TABLE_PATH=os.path.join(app.instance_path, 'coorTable.json'),
         SOURCE_HAN_SANS_SC_NORMAL_PATH=os.path.join(app.root_path, 'font_parser/assets/SourceHanSansSC-Normal.otf'),
         SOURCE_HAN_SANS_SC_REGULAR_PATH=os.path.join(app.root_path, 'font_parser/assets/SourceHanSansSC-Regular.otf'),
+        ENABLE_TOOLS=os.getenv('ENABLE_TOOLS', False) and True
     )
+    app.logger.info('ENABLE_TOOLS: {}'.format(app.config.get('ENABLE_TOOLS')))
 
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
@@ -38,57 +39,16 @@ def create_app(test_config=None):
         from . import html
         app.register_blueprint(html.bp)
 
+        if app.config.get('ENABLE_TOOLS'):
+            from . import tools
+            app.register_blueprint(tools.bp)
+
         @app.after_request
         def after(response: Response):
             response.headers.add('Referrer-Policy', 'same-origin')
             return response
 
     return app
-
-
-def is_coor_match(x, y) -> bool:
-    """比较 coor"""
-
-    # 如果字符 coor 长度相同
-    if len(x) == len(y):
-        match = True
-        # 逐一比较各点
-        for ii in range(len(x)):
-            rx, ry = x[ii]
-            lx, ly = y[ii]
-            if rx != lx or ry != ly:
-                match = False
-                break
-        return match
-    else:
-        return False
-
-
-def merge_coor_table(source, target):
-    source_copy = copy.copy(source)
-    for j in source:
-        for k in target:
-            if j[0] == k[0] and is_coor_match(j[1], k[1]):
-                source_copy.remove(j)
-    return sorted([*target, *source_copy], key=lambda x: x[0])
-
-
-def deduplicate_coor_table(source: list):
-    rm_list = []
-    source_length = len(source)
-    for j in range(source_length):
-        for k in range(source_length):
-            if j > k and \
-                    source[j][0] == source[k][0] and is_coor_match(source[j][1], source[k][1]):
-                if k not in rm_list:
-                    rm_list.append(k)
-
-    target = []
-    for index, value in enumerate(source):
-        if index not in rm_list:
-            target.append(value)
-
-    return target
 
 
 def merge_and_deduplicate_coor_table(app: Flask):
@@ -105,6 +65,7 @@ def merge_and_deduplicate_coor_table(app: Flask):
             ]
         ] = sorted(_remote_coorTable, key=lambda x: x[0])
 
+    from .lib import merge_coor_table, deduplicate_coor_table
     new_local_coor_table = merge_coor_table(remote_coor_able, local_coor_table)
     new_local_coor_table = deduplicate_coor_table(new_local_coor_table)
 

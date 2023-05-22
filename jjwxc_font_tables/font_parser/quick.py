@@ -1,10 +1,9 @@
-import json
 from copy import deepcopy
+from typing import Union
 
-from flask import current_app
 from fontTools.ttLib import ttFont
 
-from .exception import MatchError
+from jjwxc_font_tables.lib import get_jjwxc_std_font_coord_table
 
 
 def list_ttf_characters(ttf: ttFont.TTFont) -> list[str]:
@@ -41,18 +40,6 @@ def get_font_coor_table(ttf: ttFont.TTFont) -> dict[str, list[tuple[int, int]]]:
     return font_coord_table
 
 
-def get_jjwxc_std_font_coord_table() -> list[
-    tuple[
-        str,
-        list[tuple[int, int]]
-    ]
-]:
-    """载入晋江文学城字体标准coordTable"""
-    with open(current_app.config.get('COORD_TABLE_PATH'), 'r') as f:
-        _t = json.load(f)
-        return sorted(_t, key=lambda x: x[0])
-
-
 def is_glpyh_similar(a: list[tuple[int, int]], b: list[tuple[int, int]], fuzz: int) -> bool:
     """
     比较两字符 coor 是否相似。
@@ -68,7 +55,7 @@ def is_glpyh_similar(a: list[tuple[int, int]], b: list[tuple[int, int]], fuzz: i
     return found
 
 
-def match_font(ttf: ttFont.TTFont) -> dict[str, str]:
+def match_jjwxc_font(ttf: ttFont.TTFont) -> Union[tuple[dict[str, str], str], tuple[dict[str, str], list[str]]]:
     """输入晋江文学城字体对应的 ttf 对象，输出匹配后结果"""
     jjwxc_std_coord_table = get_jjwxc_std_font_coord_table()
     ttf_coord_table = get_font_coor_table(ttf)
@@ -88,6 +75,6 @@ def match_font(ttf: ttFont.TTFont) -> dict[str, str]:
                 break
 
     if len(_ttf_coordTable) == len(out):
-        return out
+        return out, "OK"
     else:
-        raise MatchError('快速匹配部分晋江字符失败！')
+        return out, list(_ttf_coordTable.keys())
