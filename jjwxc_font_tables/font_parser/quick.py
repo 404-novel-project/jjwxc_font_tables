@@ -3,7 +3,7 @@ from typing import Union
 
 from fontTools.ttLib import ttFont
 
-from jjwxc_font_tables.lib import get_jjwxc_std_font_coord_table
+from jjwxc_font_tables.lib import load_jjwxc_std_font_coord_table
 
 
 def list_ttf_characters(ttf: ttFont.TTFont) -> list[str]:
@@ -57,7 +57,7 @@ def is_glpyh_similar(a: list[tuple[int, int]], b: list[tuple[int, int]], fuzz: i
 
 def match_jjwxc_font(ttf: ttFont.TTFont) -> Union[tuple[dict[str, str], str], tuple[dict[str, str], list[str]]]:
     """输入晋江文学城字体对应的 ttf 对象，输出匹配后结果"""
-    jjwxc_std_coord_table = get_jjwxc_std_font_coord_table()
+    jjwxc_std_coord_table = load_jjwxc_std_font_coord_table()
     ttf_coord_table = get_font_coor_table(ttf)
 
     # 移除晋江文学城字体 X 字符

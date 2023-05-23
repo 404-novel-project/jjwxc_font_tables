@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from flask import Blueprint, render_template, make_response, abort
 
+from .cache import cache
 from .db import db, Font
 from .font_parser import match_jjwxc_font
 from .lib import add_etag, get_charater_hex
@@ -20,6 +21,7 @@ def get_list():
     return render_template('list.html', font_name_list=_font_name_list)
 
 
+@cache.cached
 @bp.route('/<font_name>')
 async def get_font(font_name: str):
     font, status_code = await match_jjwxc_font(font_name)

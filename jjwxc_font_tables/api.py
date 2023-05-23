@@ -1,5 +1,6 @@
 from flask import Blueprint, Response, jsonify, abort
 
+from .cache import cache
 from .font_parser import match_jjwxc_font
 from .lib import add_etag
 
@@ -22,6 +23,7 @@ def api_after_request(response: Response):
     return response
 
 
+@cache.cached
 @bp.route('/<font_name>')
 async def get_font(font_name: str):
     font, status_code = await match_jjwxc_font(font_name)
@@ -35,6 +37,7 @@ async def get_font(font_name: str):
         return abort(status_code)
 
 
+@cache.cached
 @bp.route('/<font_name>/table')
 async def get_table(font_name: str):
     font, status_code = await match_jjwxc_font(font_name)
@@ -46,6 +49,7 @@ async def get_table(font_name: str):
         return abort(status_code)
 
 
+@cache.cached
 @bp.route('/<font_name>/bytes')
 async def get_bytes(font_name: str):
     font, status_code = await match_jjwxc_font(font_name)

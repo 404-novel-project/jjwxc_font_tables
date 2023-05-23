@@ -16,8 +16,6 @@ async def request_font(font_name: str, retry: int = 5) \
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.5666.197 Safari/537.36",
         "Accept": "application/font-woff2;q=1.0,application/font-woff;q=0.9,*/*;q=0.8",
         "Accept-Language": "zh-CN,zh;q=0.5",
-        "Pragma": "no-cache",
-        "Cache-Control": "no-cache",
         "Referer": "https://my.jjwxc.net/",
         "Origin": "https://my.jjwxc.net"
     }

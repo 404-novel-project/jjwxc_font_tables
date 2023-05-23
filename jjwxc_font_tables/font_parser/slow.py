@@ -1,16 +1,17 @@
+import json
 import math
 from functools import lru_cache
 from typing import IO
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from flask import current_app
+from flask import current_app, g
 from fontTools.ttLib import ttFont
 
 from .commonly_used_character import character_list
 from .exception import ImageMatchError
 from .quick import list_ttf_characters
-from ..lib import get_jjwxc_std_font_coord_table
+from ..lib import load_jjwxc_std_font_coord_table
 
 # 默认字号 32 px
 # 行高 1.2 倍
@@ -37,7 +38,7 @@ def load_jjwxc_std_guest_range() -> list[str]:
             lambda x: x != 'x',
             map(
                 lambda x: x[0],
-                get_jjwxc_std_font_coord_table()
+                load_jjwxc_std_font_coord_table()
             ))
     ))
 
@@ -71,57 +72,20 @@ def draw(text: str, font: ImageFont.FreeTypeFont, size: tuple[int, int] = IMAGE_
     return image
 
 
-def compare_im_pil(test_im: Image, std_im: Image):
-    """比较两二值化图像相似度"""
-    if test_im.mode != '1' or std_im.mode != '1':
-        raise ImageMatchError("输入图像非二值化图像")
-    if test_im.size != std_im.size:
-        raise ImageMatchError("图像大小不一致")
-
-    w, h = test_im.size
-    test_black_pixel = 0
-    match_pixel = 0
-    for x in range(w):
-        for y in range(h):
-            if test_im.getpixel((x, y)) == 0:
-                test_black_pixel = test_black_pixel + 1
-                if test_im.getpixel((x, y)) == std_im.getpixel((x, y)):
-                    match_pixel = match_pixel + 1
-
-    return match_pixel / test_black_pixel
-
-
 def compare_im_np(test_array: np.ndarray, std_array: np.ndarray):
     if test_array.shape != std_array.shape:
         raise ImageMatchError("图像大小不一致")
 
+    g.slow_match_time = g.slow_match_time + 1
+    # 获取图像黑色部分
     test_black_array = test_array == False
     std_black_array = std_array == False
+
+    # 求出共同黑色部分
     common_black_array = test_black_array & std_black_array
 
+    # 输出共同黑色部分占测试图像比例
     return np.count_nonzero(common_black_array) / np.count_nonzero(test_black_array)
-
-
-def match_test_im(test_im: Image, std_font: ImageFont.FreeTypeFont, guest_range: list[str]):
-    test_array = np.asarray(test_im)
-
-    match_result = {}
-
-    most_match_rate: float = 0.0
-    most_match: str = ''
-    for text in guest_range:
-        std_im = draw(text, std_font)
-
-        std_array = np.asarray(std_im)
-        match_rate = compare_im_np(test_array, std_array)
-
-        match_result[text] = match_rate
-
-        if match_rate > most_match_rate:
-            most_match = text
-            most_match_rate = match_rate
-
-    return most_match, match_result
 
 
 def match_test_im_with_cache(test_im: Image, std_font: ImageFont.FreeTypeFont, guest_range: list[str]):
@@ -134,13 +98,27 @@ def match_test_im_with_cache(test_im: Image, std_font: ImageFont.FreeTypeFont, g
     npz_path = npz_path_dict.get(' '.join(std_font.getname())) \
                or current_app.config.get('SOURCE_HAN_SANS_SC_NORMAL_NPZ_PATH')
 
+    josn_path_dict = {
+        "Source Han Sans SC Normal": current_app.config.get('SOURCE_HAN_SANS_SC_NORMAL_JSON_PATH'),
+        "Source Han Sans SC Regular": current_app.config.get('SOURCE_HAN_SANS_SC_REGULARL_JSON_PATH')
+    }
+    josn_path = josn_path_dict.get(' '.join(std_font.getname())) \
+                or current_app.config.get('SOURCE_HAN_SANS_SC_NORMAL_JSON_PATH')
+
     std_im_np_arrays = load_std_im_np_arrays(npz_path)
+    std_im_black_point_rates = load_std_im_black_point_rates(josn_path)
 
     match_result = {}
 
     most_match_rate: float = 0.0
     most_match: str = ''
+
+    test_im_black_point_rate = get_im_black_point_rate(test_im)
     for text in guest_range:
+        if abs(test_im_black_point_rate - std_im_black_point_rates[text]) / test_im_black_point_rate > 0.2:
+            # 跳过黑色比例相较其自身差异 20% 以上的标准字符
+            continue
+
         std_array = std_im_np_arrays[text]
         match_rate = compare_im_np(test_array, std_array)
 
@@ -163,12 +141,42 @@ def save_std_im_np_arrays(std_font: ImageFont.FreeTypeFont, npz_path: str):
         std_array = np.asarray(std_im)
         npz_dict[text] = std_array
 
-    np.savez(npz_path, **npz_dict)
+    np.savez_compressed(npz_path, **npz_dict)
 
 
 @lru_cache
 def load_std_im_np_arrays(npz_path: str):
-    return np.load(npz_path)
+    with np.load(npz_path, mmap_mode='r') as _std_im_np_arrays:
+        std_im_np_arrays = {}
+        for key in _std_im_np_arrays.keys():
+            std_im_np_arrays[key] = _std_im_np_arrays.get(key)
+
+    return std_im_np_arrays
+
+
+def get_im_black_point_rate(im: Image):
+    std_array = np.asarray(im)
+    std_black_array = std_array == False
+    return np.count_nonzero(std_black_array) / std_array.size
+
+
+def save_std_im_black_point_rates(std_font: ImageFont.FreeTypeFont, josn_path: str):
+    guest_range = list({*load_jjwxc_std_guest_range(), *character_list})
+
+    json_dict = {}
+
+    for text in guest_range:
+        std_im = draw(text, std_font)
+        json_dict[text] = get_im_black_point_rate(std_im)
+
+    with open(josn_path, 'w') as f:
+        json.dump(json_dict, f)
+
+
+@lru_cache
+def load_std_im_black_point_rates(josn_path: str):
+    with open(josn_path, 'r') as f:
+        return json.load(f)
 
 
 def match_font(test_font: ImageFont.FreeTypeFont, test_font_characters: list[str],

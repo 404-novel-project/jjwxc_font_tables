@@ -1,6 +1,7 @@
 import copy
 import hashlib
 import json
+from functools import lru_cache
 
 from flask import Response
 
@@ -15,7 +16,8 @@ def get_charater_hex(chac: str):
     return str(hex(ord(chac))).replace('0x', 'U+')
 
 
-def get_jjwxc_std_font_coord_table() -> list[
+@lru_cache
+def load_jjwxc_std_font_coord_table() -> list[
     tuple[
         str,
         list[tuple[int, int]]

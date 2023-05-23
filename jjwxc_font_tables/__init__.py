@@ -20,7 +20,10 @@ def create_app(test_config=None):
         SOURCE_HAN_SANS_SC_REGULAR_PATH=os.path.join(app.root_path, 'font_parser/assets/SourceHanSansSC-Regular.otf'),
         ENABLE_TOOLS=os.getenv('ENABLE_TOOLS', False) and True,
         SOURCE_HAN_SANS_SC_NORMAL_NPZ_PATH=os.path.join(app.instance_path, 'SourceHanSansSC-Normal.npz'),
-        SOURCE_HAN_SANS_SC_REGULARL_NPZ_PATH=os.path.join(app.instance_path, 'SourceHanSansSC-Regular.npz')
+        SOURCE_HAN_SANS_SC_REGULARL_NPZ_PATH=os.path.join(app.instance_path, 'SourceHanSansSC-Regular.npz'),
+        SOURCE_HAN_SANS_SC_NORMAL_JSON_PATH=os.path.join(app.instance_path, 'SourceHanSansSC-Normal.json'),
+        SOURCE_HAN_SANS_SC_REGULARL_JSON_PATH=os.path.join(app.instance_path, 'SourceHanSansSC-Regular.json'),
+        CACHE_DIR=os.path.join(app.instance_path, 'cache-dir')
     )
     app.logger.info('ENABLE_TOOLS: {}'.format(app.config.get('ENABLE_TOOLS')))
 
@@ -43,6 +46,9 @@ def create_app(test_config=None):
 
         from . import html
         app.register_blueprint(html.bp)
+
+        from . import font_parser
+        font_parser.init_app(app)
 
         if app.config.get('ENABLE_TOOLS'):
             from . import tools
@@ -85,6 +91,13 @@ def init(app: Flask):
     from . import db
     db.init_app(app)
 
+    if not os.path.exists(app.config.get('CACHE_DIR')):
+        os.makedirs(app.config.get('CACHE_DIR'))
+
+    from .cache import cache
+    cache.init_app(app, config={"CACHE_TYPE": "FileSystemCache", "CACHE_DIR": app.config.get('CACHE_DIR'),
+                                "CACHE_DEFAULT_TIMEOUT": 86400})
+
     if not os.path.exists(os.path.join(app.instance_path, 'jjwxc.sqlite')):
         db.init_db()
 
@@ -106,13 +119,18 @@ def init(app: Flask):
     @app.before_request
     def before_request():
         g.start_time = time.perf_counter()
+        g.slow_match_time = 0
 
     @app.after_request
     def after_request(response: Response):
+        response.headers.add('Referrer-Policy', 'same-origin')
+
         total_time = time.perf_counter() - g.start_time
-        time_in_ms = total_time * 1000
+        time_in_ms = round(total_time * 1000, 6)
         response.headers.add('X-Runtime', time_in_ms)
         response.headers.add('X-Request-Id', str(uuid4()))
-        
-        response.headers.add('Referrer-Policy', 'same-origin')
+
+        if g.slow_match_time != 0:
+            response.headers.add('X-Match-Times', g.slow_match_time)
+
         return response

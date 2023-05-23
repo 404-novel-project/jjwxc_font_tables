@@ -8,9 +8,6 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from .font_parser import validator
-from .font_parser.slow import (
-    save_std_im_np_arrays, load_SourceHanSansSC_Normal, load_SourceHanSansSC_Regular
-)
 from .font_parser.tools import match_jjwxc_font_tool, match_upload_font_tool
 
 bp = Blueprint('tools', __name__, url_prefix='/tools')
@@ -79,11 +76,3 @@ def init_app(app: Flask):
         UPLOAD_FOLDER=tempfolder
     )
     current_app.logger.info('create temp upload folder: {}'.format(tempfolder))
-
-    if not os.path.exists(app.config.get('SOURCE_HAN_SANS_SC_NORMAL_NPZ_PATH')):
-        current_app.logger.info('save SourceHanSansSC_Normal npz')
-        save_std_im_np_arrays(load_SourceHanSansSC_Normal(), app.config.get('SOURCE_HAN_SANS_SC_NORMAL_NPZ_PATH'))
-
-    if not os.path.exists(app.config.get('SOURCE_HAN_SANS_SC_REGULARL_NPZ_PATH')):
-        current_app.logger.info('save SourceHanSansSC_Regular npz')
-        save_std_im_np_arrays(load_SourceHanSansSC_Regular(), app.config.get('SOURCE_HAN_SANS_SC_REGULARL_NPZ_PATH'))

@@ -17,6 +17,7 @@ fonttools = "^4.39.4"
 brotli = "^1.0.9"
 gevent = "^22.10.2"
 numpy = "^1.24.3"
+flask-caching = "^2.0.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.1"
