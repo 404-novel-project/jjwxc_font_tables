@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 
@@ -36,7 +38,7 @@ def test_post_slow_match_jjwxc_404(client, font_name):
 
 
 def test_slow_match_upload_post(client):
-    with open('jjwxcfont_2odzt.woff', 'rb') as f:
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'jjwxcfont_2odzt.woff'), 'rb') as f:
         values = {
             'std_font': 'SourceHanSansSC-Normal', 'guest_range': '2500',
             'upload_font': (f, 'jjwxcfont_2odzt.woff')
