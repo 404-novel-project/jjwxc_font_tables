@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}上传自定义字体：{{ font.name }}{% endblock %}
+
+{% block head %}
+<style>
+.upload-font {
+  font-family: {{ font.name.replace('.','_') }}, 'Microsoft YaHei', PingFangSC-Regular, HelveticaNeue-Light, 'Helvetica Neue Light', sans-serif !important;;
+}
+@font-face {
+  font-family: {{ font.name.replace('.','_') }};
+  src: url('{{ url_for('tools.get_slow_match_upload_font', filename=font_url_filename) }}') format('{{ font_url_format }}');
+}
+</style>
+{% endblock %}
+
+
+{% block main %}
+<h1>上传自定义字体：{{ font.name }}</h1>
+<div>
+    <table>
+        <thead>
+        <tr>
+            <th>自定义字符（编码）</th>
+            <th>自定义字符（渲染）</th>
+            <th>通用字符</th>
+        </tr>
+        </thead>
+        <tbody>
+        {%- for item in font.table.items() -%}
+        <tr>
+            <td>{{ get_charater_hex(item[0]) }}</td>
+            <td class="upload-font">{{ item[0] }}</td>
+            <td>{{ item[1] }}</td>
+        </tr>
+        {%- endfor -%}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

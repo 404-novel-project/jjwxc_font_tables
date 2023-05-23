@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}慢速匹配上传自定义字体{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+
+{% block main %}
+<h1>慢速匹配上传自定义字体</h1>
+<div class="form">
+    {% with messages = get_flashed_messages() %}
+    <div class="flashes">
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    {% endwith %}
+    <form method="post" enctype="multipart/form-data">
+        <fieldset>
+            <label for="upload_font">自定义字体：</label>
+            <input name="upload_font" id="upload_font" type="file" required>
+        </fieldset>
+
+        <fieldset>
+            <label for="std_font">标准字体：</label>
+            <select name="std_font" id="std_font">
+                <option value="SourceHanSansSC-Normal">SourceHanSansSC Normal</option>
+                <option value="SourceHanSansSC-Regular">SourceHanSansSC Regular</option>
+            </select>
+        </fieldset>
+
+        <fieldset>
+            <label for="guest_range">对比字符集：</label>
+            <select name="guest_range" id="guest_range">
+                <option value="2500">现代汉语常用字表</option>
+                <option value="jjwxc">晋江文学城字符集</option>
+            </select>
+        </fieldset>
+
+        <input type="submit" value="提交">
+    </form>
+</div>
+{% endblock %}

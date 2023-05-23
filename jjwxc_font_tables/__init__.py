@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+from uuid import uuid4
 
 from flask import Flask, Response
 
@@ -11,11 +12,14 @@ __version__ = '0.1.0'
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
+        SECRET_KEY=str(uuid4()),
         SQLALCHEMY_DATABASE_URI='sqlite:///{}'.format(os.path.join(app.instance_path, 'jjwxc.sqlite')),
         COORD_TABLE_PATH=os.path.join(app.instance_path, 'coorTable.json'),
         SOURCE_HAN_SANS_SC_NORMAL_PATH=os.path.join(app.root_path, 'font_parser/assets/SourceHanSansSC-Normal.otf'),
         SOURCE_HAN_SANS_SC_REGULAR_PATH=os.path.join(app.root_path, 'font_parser/assets/SourceHanSansSC-Regular.otf'),
-        ENABLE_TOOLS=os.getenv('ENABLE_TOOLS', False) and True
+        ENABLE_TOOLS=os.getenv('ENABLE_TOOLS', False) and True,
+        SOURCE_HAN_SANS_SC_NORMAL_NPZ_PATH=os.path.join(app.instance_path, 'SourceHanSansSC-Normal.npz'),
+        SOURCE_HAN_SANS_SC_REGULARL_NPZ_PATH=os.path.join(app.instance_path, 'SourceHanSansSC-Regular.npz')
     )
     app.logger.info('ENABLE_TOOLS: {}'.format(app.config.get('ENABLE_TOOLS')))
 
@@ -42,6 +46,7 @@ def create_app(test_config=None):
         if app.config.get('ENABLE_TOOLS'):
             from . import tools
             app.register_blueprint(tools.bp)
+            tools.init_app(app)
 
         @app.after_request
         def after(response: Response):

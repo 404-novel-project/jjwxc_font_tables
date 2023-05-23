@@ -22,3 +22,6 @@ div.main form {
 div.main form > input[type="submit"] {
   margin-top: 1em;
 }
+.flashes {
+	color: red;
+}

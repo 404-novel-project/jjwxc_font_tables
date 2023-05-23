@@ -33,3 +33,14 @@ def test_post_slow_match_jjwxc_404(client, font_name):
             "guest_range": "jjwxc"
         })
     assert response.status_code == 404
+
+
+def test_slow_match_upload_post(client):
+    with open('jjwxcfont_2odzt.woff', 'rb') as f:
+        values = {
+            'std_font': 'SourceHanSansSC-Normal', 'guest_range': '2500',
+            'upload_font': (f, 'jjwxcfont_2odzt.woff')
+        }
+        response = client.post('/tools/slow-match/upload', data=values, content_type='multipart/form-data')
+
+    assert response.status_code == 200

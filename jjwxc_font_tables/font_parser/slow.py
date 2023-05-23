@@ -1,20 +1,16 @@
-import io
-import json
 import math
-import time
 from functools import lru_cache
-from typing import IO, Union
-from uuid import uuid4
+from typing import IO
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from flask import current_app, render_template, g
+from flask import current_app
 from fontTools.ttLib import ttFont
 
 from .commonly_used_character import character_list
-from .download import get_font
 from .exception import ImageMatchError
 from .quick import list_ttf_characters
-from ..lib import get_charater_hex, get_jjwxc_std_font_coord_table
+from ..lib import get_jjwxc_std_font_coord_table
 
 # 默认字号 32 px
 # 行高 1.2 倍
@@ -22,6 +18,7 @@ FONT_SIZE = 96
 IMAGE_SIZE = (math.ceil(FONT_SIZE * 1.2), math.ceil(FONT_SIZE * 1.2))
 
 
+@lru_cache
 def _load_font(font, size=FONT_SIZE):
     return ImageFont.truetype(font, size=size)
 
@@ -74,32 +71,50 @@ def draw(text: str, font: ImageFont.FreeTypeFont, size: tuple[int, int] = IMAGE_
     return image
 
 
-def compare_im(im_x: Image, im_y: Image):
+def compare_im_pil(test_im: Image, std_im: Image):
     """比较两二值化图像相似度"""
-    if im_x.size[0] != im_y.size[0] or im_x.size[1] != im_y.size[1]:
-        raise ImageMatchError("图像大小不一致")
-    if im_x.mode != '1' or im_y.mode != '1':
+    if test_im.mode != '1' or std_im.mode != '1':
         raise ImageMatchError("输入图像非二值化图像")
+    if test_im.size != std_im.size:
+        raise ImageMatchError("图像大小不一致")
 
-    w, h = im_x.size
-    total_pixel = w * h
+    w, h = test_im.size
+    test_black_pixel = 0
     match_pixel = 0
     for x in range(w):
         for y in range(h):
-            if im_x.getpixel((x, y)) == 0 and im_x.getpixel((x, y)) == im_y.getpixel((x, y)):
-                match_pixel = match_pixel + 1
+            if test_im.getpixel((x, y)) == 0:
+                test_black_pixel = test_black_pixel + 1
+                if test_im.getpixel((x, y)) == std_im.getpixel((x, y)):
+                    match_pixel = match_pixel + 1
 
-    return match_pixel / total_pixel
+    return match_pixel / test_black_pixel
+
+
+def compare_im_np(test_array: np.ndarray, std_array: np.ndarray):
+    if test_array.shape != std_array.shape:
+        raise ImageMatchError("图像大小不一致")
+
+    test_black_array = test_array == False
+    std_black_array = std_array == False
+    common_black_array = test_black_array & std_black_array
+
+    return np.count_nonzero(common_black_array) / np.count_nonzero(test_black_array)
 
 
 def match_test_im(test_im: Image, std_font: ImageFont.FreeTypeFont, guest_range: list[str]):
+    test_array = np.asarray(test_im)
+
     match_result = {}
 
     most_match_rate: float = 0.0
     most_match: str = ''
     for text in guest_range:
         std_im = draw(text, std_font)
-        match_rate = compare_im(test_im, std_im)
+
+        std_array = np.asarray(std_im)
+        match_rate = compare_im_np(test_array, std_array)
+
         match_result[text] = match_rate
 
         if match_rate > most_match_rate:
@@ -109,12 +124,59 @@ def match_test_im(test_im: Image, std_font: ImageFont.FreeTypeFont, guest_range:
     return most_match, match_result
 
 
+def match_test_im_with_cache(test_im: Image, std_font: ImageFont.FreeTypeFont, guest_range: list[str]):
+    test_array = np.asarray(test_im)
+
+    npz_path_dict = {
+        "Source Han Sans SC Normal": current_app.config.get('SOURCE_HAN_SANS_SC_NORMAL_NPZ_PATH'),
+        "Source Han Sans SC Regular": current_app.config.get('SOURCE_HAN_SANS_SC_REGULARL_NPZ_PATH')
+    }
+    npz_path = npz_path_dict.get(' '.join(std_font.getname())) \
+               or current_app.config.get('SOURCE_HAN_SANS_SC_NORMAL_NPZ_PATH')
+
+    std_im_np_arrays = load_std_im_np_arrays(npz_path)
+
+    match_result = {}
+
+    most_match_rate: float = 0.0
+    most_match: str = ''
+    for text in guest_range:
+        std_array = std_im_np_arrays[text]
+        match_rate = compare_im_np(test_array, std_array)
+
+        match_result[text] = match_rate
+
+        if match_rate > most_match_rate:
+            most_match = text
+            most_match_rate = match_rate
+
+    return most_match, match_result
+
+
+def save_std_im_np_arrays(std_font: ImageFont.FreeTypeFont, npz_path: str):
+    guest_range = list({*load_jjwxc_std_guest_range(), *character_list})
+
+    npz_dict = {}
+
+    for text in guest_range:
+        std_im = draw(text, std_font)
+        std_array = np.asarray(std_im)
+        npz_dict[text] = std_array
+
+    np.savez(npz_path, **npz_dict)
+
+
+@lru_cache
+def load_std_im_np_arrays(npz_path: str):
+    return np.load(npz_path)
+
+
 def match_font(test_font: ImageFont.FreeTypeFont, test_font_characters: list[str],
                std_font: ImageFont.FreeTypeFont, guest_range: list[str]):
     out = {}
     for test_char in test_font_characters:
         test_im = draw(test_char, test_font)
-        most_match_char, test_match_result = match_test_im(test_im, std_font, guest_range)
+        most_match_char, test_match_result = match_test_im_with_cache(test_im, std_font, guest_range)
         out[test_char] = most_match_char
 
     return out
@@ -145,57 +207,3 @@ def match_jjwxc_font_one_character(test_character: str, jjwxc_font_fd: IO,
         jjwxc_image_font, [test_character],
         std_font, guest_range
     )
-
-
-async def match_jjwxc_font_tool(font_name: str, options=None) -> Union[tuple[str, int], tuple[None, int]]:
-    font = await get_font(font_name)
-    status = font.get('status')
-
-    if status == 'OK':
-        if options is None:
-            options = {
-                "std_font": "SourceHanSansSC-Normal",
-                "guest_range": "jjwxc"
-            }
-
-        std_font_dict = {
-            "SourceHanSansSC-Normal": load_SourceHanSansSC_Normal(),
-            "SourceHanSansSC-Regular": load_SourceHanSansSC_Regular()
-        }
-        guest_range_dict = {
-            "jjwxc": load_jjwxc_std_guest_range(),
-            "2500": character_list
-        }
-        std_font = std_font_dict.get(
-            options.get('std_font') or "SourceHanSansSC-Normal"
-        ) or load_SourceHanSansSC_Normal()
-        guest_range = guest_range_dict.get(
-            options.get('guest_range') or "jjwxc"
-        ) or load_jjwxc_std_guest_range()
-
-        g.uuid = uuid4()
-        current_app.logger.info(
-            "match_jjwxc_font_tools start: {uuid} {fontname} {options}".format(
-                uuid=g.uuid, fontname=font.get('name'), options=json.dumps(options)
-            )
-        )
-        T1 = time.perf_counter()
-
-        with io.BytesIO(font.get('bytes')) as font_fd:
-            table = match_jjwxc_font(
-                font_fd, font.get('ttf'),
-                std_font, guest_range
-            )
-
-        T2 = time.perf_counter()
-        current_app.logger.info(
-            "match_jjwxc_font_tools finished: {uuid} {cost_time}ms".format(
-                uuid=g.uuid, fontname=font.get('name'), cost_time=(T2 - T1) * 1000
-            )
-        )
-        return render_template('font.html', font={"name": font.get('name'), "table": table},
-                               get_charater_hex=get_charater_hex), 200
-    elif status == "404":
-        return None, 404
-    else:
-        return None, 503

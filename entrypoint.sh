@@ -1,3 +1,6 @@
 #!/bin/bash
 
-gunicorn --bind 0.0.0.0:8080  -w "$(nproc)" --preload -k gevent "jjwxc_font_tables:create_app()"
+set -x
+
+gunicorn --bind 0.0.0.0:8080  --workers "${WORKERS-$(nproc)}" --timeout "${TIMEOUT:-300}" \
+  --worker-class gevent --preload "jjwxc_font_tables:create_app()"

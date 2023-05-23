@@ -3,6 +3,8 @@
 # 来源： https://www.zdic.net/zd/zb/cc1/
 # Array.from(document.querySelectorAll('div.bs_index3 > li > a')).map((x) => x.textContent)
 
+import string
+
 character_list = [
     "一",
     "乙",
@@ -2503,5 +2505,9 @@ character_list = [
     "霸",
     "露",
     "囊",
-    "罐"
+    "罐",
+
+    # 附加 ASCII 字符
+    *string.digits,
+    *string.ascii_letters
 ]
