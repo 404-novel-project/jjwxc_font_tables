@@ -1,9 +1,10 @@
 import json
 import os
 import shutil
+import time
 from uuid import uuid4
 
-from flask import Flask, Response
+from flask import Flask, Response, g
 
 name = 'jjwxc_font_tables'
 __version__ = '0.1.0'
@@ -47,11 +48,6 @@ def create_app(test_config=None):
             from . import tools
             app.register_blueprint(tools.bp)
             tools.init_app(app)
-
-        @app.after_request
-        def after(response: Response):
-            response.headers.add('Referrer-Policy', 'same-origin')
-            return response
 
     return app
 
@@ -106,3 +102,17 @@ def init(app: Flask):
                 os.path.join(app.root_path, 'font_parser/assets/coorTable.json'),
                 app.config.get('COORD_TABLE_PATH')
             )
+
+    @app.before_request
+    def before_request():
+        g.start_time = time.perf_counter()
+
+    @app.after_request
+    def after_request(response: Response):
+        total_time = time.perf_counter() - g.start_time
+        time_in_ms = total_time * 1000
+        response.headers.add('X-Runtime', time_in_ms)
+        response.headers.add('X-Request-Id', str(uuid4()))
+        
+        response.headers.add('Referrer-Policy', 'same-origin')
+        return response

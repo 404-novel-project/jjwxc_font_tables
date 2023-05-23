@@ -1,14 +1,12 @@
 import io
 import json
 import re
-import time
 from copy import deepcopy
 from typing import Union
-from uuid import uuid4
 
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
-from flask import current_app, g
+from flask import current_app
 
 from . import download
 from . import exception
@@ -16,7 +14,7 @@ from . import quick
 from . import slow
 from ..db import db, Font
 from ..lib import (
-    get_charater_hex, get_jjwxc_std_font_coord_table, deduplicate_coor_table
+    get_jjwxc_std_font_coord_table, deduplicate_coor_table
 )
 
 
@@ -43,14 +41,6 @@ async def _match_jjwxc_font(font_name: str) -> \
             _ttf_coordTable = quick_match_status
             for x in _ttf_coordTable:
                 if x not in table.keys():
-                    g.uuid = uuid4()
-                    current_app.logger.info(
-                        "font_parser slow_match start: {uuid} {fontname} {charater}".format(
-                            uuid=g.uuid, fontname=font.get('name'), charater=get_charater_hex(x)
-                        )
-                    )
-                    T1 = time.perf_counter()
-
                     with io.BytesIO(font.get('bytes')) as font_fd:
                         slow_table = slow.match_jjwxc_font_one_character(x, font_fd)
                     table[x] = slow_table[x]
@@ -64,13 +54,6 @@ async def _match_jjwxc_font(font_name: str) -> \
                     new_local_coor_table = deduplicate_coor_table(new_local_coor_table)
                     with open(current_app.config.get('COORD_TABLE_PATH'), 'w') as f:
                         json.dump(new_local_coor_table, f)
-
-                    T2 = time.perf_counter()
-                    current_app.logger.info(
-                        "font_parser slow_match finished: {uuid} {cost_time}ms".format(
-                            uuid=g.uuid, fontname=font.get('name'), cost_time=(T2 - T1) * 1000
-                        )
-                    )
 
         out: dict[str, Union[str, bytes, dict[str, str]]] = deepcopy(font)
         out.pop('ttf', None)
